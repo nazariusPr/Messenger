@@ -1,0 +1,35 @@
+server:
+  port: 9091
+
+spring:
+  application:
+    name: Server-Test
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+
+  sql:
+    init:
+      platform: h2
+
+  jpa:
+    database: H2
+    show-sql: false
+    hibernate:
+      ddl-auto: create-drop
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: dummy-google-client-id
+
+jwt:
+  secrets:
+    access-token: dummy-access-token-secret
+    refresh-token: dummy-refresh-token-secret
+
+client:
+  url: http://localhost:3000

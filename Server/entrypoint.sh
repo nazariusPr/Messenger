@@ -1,0 +1,1 @@
+java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:9000 -jar /app/app.jar
