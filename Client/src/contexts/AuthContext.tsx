@@ -9,7 +9,7 @@ import { refreshToken, googleOAuth2, logout as serverLogout } from "../api/api";
 import type { ReactNode } from "react";
 import type { AxiosRequestConfig } from "axios";
 import { jwtDecode } from "jwt-decode";
-import axiosInstance from "../api/axiosInstance";
+import { apiClient } from "../api/axiosInstance";
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -91,12 +91,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   useLayoutEffect(() => {
-    const authInterceptor = axiosInstance.interceptors.request.use((config) => {
+    const requestInterceptor = apiClient.interceptors.request.use((config) => {
       const customConfig = config as CustomAxiosRequestConfig;
 
-      // Explicitly initialize `_retry` to false if undefined
       if (typeof customConfig._retry === "undefined") {
-        console.log("In undefined");
         customConfig._retry = false;
       }
 
@@ -108,8 +106,42 @@ export function AuthProvider({ children }: AuthProviderProps) {
       return config;
     });
 
+    const responseInterceptor = apiClient.interceptors.response.use(
+      (response) => response,
+      async (error) => {
+        const originalRequest = error.config as CustomAxiosRequestConfig;
+
+        if (
+          error.response?.status === 401 &&
+          error.response.data?.message === "NOT VALID JWT" &&
+          !originalRequest._retry
+        ) {
+          originalRequest._retry = true;
+
+          try {
+            const newAccessToken = await refreshToken();
+            setAccessToken(newAccessToken);
+
+            originalRequest.headers = originalRequest.headers ?? {};
+            originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+
+            const payload = jwtDecode<JwtPayload>(newAccessToken);
+            setEmail(payload.sub);
+
+            return apiClient(originalRequest);
+          } catch (err) {
+            await logout();
+            return Promise.reject(err);
+          }
+        }
+
+        return Promise.reject(error);
+      }
+    );
+
     return () => {
-      axiosInstance.interceptors.request.eject(authInterceptor);
+      apiClient.interceptors.request.eject(requestInterceptor);
+      apiClient.interceptors.response.eject(responseInterceptor);
     };
   }, [accessToken]);
 

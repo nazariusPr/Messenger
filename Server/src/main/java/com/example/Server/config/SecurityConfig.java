@@ -1,8 +1,9 @@
 package com.example.Server.config;
 
 import static com.example.Server.constant.AppConstants.AUTH_LINK;
+import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
+import static jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED;
 
-import com.example.Server.security.filter.ExceptionHandlerFilter;
 import com.example.Server.security.filter.JwtAuthenticationFilter;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
@@ -29,7 +30,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableWebSecurity
 public class SecurityConfig {
   private final JwtAuthenticationFilter authenticationFilter;
-  private final ExceptionHandlerFilter exceptionFilter;
 
   @Value("${client.url}")
   private String CLIENT_URL;
@@ -57,8 +57,15 @@ public class SecurityConfig {
                     .anyRequest()
                     .authenticated())
         .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-        .addFilterBefore(authenticationFilter, UsernamePasswordAuthenticationFilter.class)
-        .addFilterBefore(exceptionFilter, JwtAuthenticationFilter.class);
+        .exceptionHandling(
+            exception ->
+                exception
+                    .authenticationEntryPoint(
+                        (req, resp, exc) -> resp.sendError(SC_UNAUTHORIZED, "Authorize first."))
+                    .accessDeniedHandler(
+                        (req, resp, exc) ->
+                            resp.sendError(SC_FORBIDDEN, "You don't have authorities.")))
+        .addFilterBefore(authenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
     return http.build();
   }

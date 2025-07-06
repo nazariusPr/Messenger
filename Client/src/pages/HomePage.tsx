@@ -85,7 +85,7 @@ const HomePage: React.FC = () => {
       );
       subscriptionsRef.current = {};
     };
-  }, [client, client?.connected, chats]);
+  }, [client, client?.connected]);
 
   const handleSendMessage = (content: string) => {
     if (!selectedChat || !client || !client.connected) return;
