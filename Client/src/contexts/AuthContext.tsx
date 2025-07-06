@@ -5,20 +5,18 @@ import {
   useEffect,
   useLayoutEffect,
 } from "react";
-import { refreshToken, googleOAuth2 } from "../api/api";
+import { refreshToken, googleOAuth2, logout as serverLogout } from "../api/api";
 import type { ReactNode } from "react";
 import type { AxiosRequestConfig } from "axios";
 import { jwtDecode } from "jwt-decode";
 import axiosInstance from "../api/axiosInstance";
-
-const REFRESH_TOKEN_KEY = "refresh_token";
 
 interface AuthProviderProps {
   children: ReactNode;
 }
 
 interface CustomAxiosRequestConfig extends AxiosRequestConfig {
-  _retry?: boolean;
+  _retry: boolean;
 }
 
 interface AuthContextType {
@@ -51,75 +49,58 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return accessToken;
   };
 
-  const getRefreshToken = (): string | null => {
-    try {
-      return localStorage.getItem(REFRESH_TOKEN_KEY);
-    } catch (err) {
-      console.error("Error getting refresh token", err);
-      return null;
-    }
-  };
-
-  const setRefreshToken = (token: string | null): void => {
-    try {
-      if (token) {
-        localStorage.setItem(REFRESH_TOKEN_KEY, token);
-      } else {
-        localStorage.removeItem(REFRESH_TOKEN_KEY);
-      }
-    } catch (err) {
-      console.error("Error setting refresh token", err);
-    }
-  };
-
   const loginWithGoogle = async (googleToken: string): Promise<void> => {
     try {
-      const { accessToken, refreshToken } = await googleOAuth2(googleToken);
+      const { accessToken } = await googleOAuth2(googleToken);
 
       setAccessToken(accessToken);
-      setRefreshToken(refreshToken);
 
       const payload = jwtDecode<JwtPayload>(accessToken);
       setEmail(payload.sub);
     } catch (err) {
-      logout();
+      await logout();
       throw err;
     }
   };
 
-  const logout = (): void => {
+  const logout = async (): Promise<void> => {
     setAccessToken(null);
-    setRefreshToken(null);
     setEmail("");
+    await serverLogout();
   };
 
   useEffect(() => {
     const initializeAuth = async () => {
-      const storedRefreshToken = getRefreshToken();
-      if (storedRefreshToken) {
+      if (!accessToken) {
         try {
-          const token = await refreshToken(storedRefreshToken);
+          const token = await refreshToken();
           setAccessToken(token);
 
           const payload = jwtDecode<JwtPayload>(token);
           setEmail(payload.sub);
         } catch (err) {
-          logout();
-        }
-      } else {
-        logout();
-      }
+          setAuthReady(true);
 
+          await logout();
+        }
+      }
       setAuthReady(true);
     };
+
     initializeAuth();
   }, []);
 
   useLayoutEffect(() => {
     const authInterceptor = axiosInstance.interceptors.request.use((config) => {
-      const isRetry = (config as CustomAxiosRequestConfig)._retry;
+      const customConfig = config as CustomAxiosRequestConfig;
 
-      if (!isRetry && accessToken) {
+      // Explicitly initialize `_retry` to false if undefined
+      if (typeof customConfig._retry === "undefined") {
+        console.log("In undefined");
+        customConfig._retry = false;
+      }
+
+      if (!customConfig._retry && accessToken) {
         config.headers = config.headers || {};
         config.headers.Authorization = `Bearer ${accessToken}`;
       }
@@ -131,47 +112,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       axiosInstance.interceptors.request.eject(authInterceptor);
     };
   }, [accessToken]);
-
-  useLayoutEffect(() => {
-    const refreshInterceptor = axiosInstance.interceptors.response.use(
-      (response) => response,
-      async (error) => {
-        const originalRequest = error.config as CustomAxiosRequestConfig;
-
-        if (
-          error.response?.status === 403 &&
-          error.response.data === "NOT VALID JWT" &&
-          !originalRequest._retry
-        ) {
-          try {
-            const storedRefreshToken = getRefreshToken();
-            if (!storedRefreshToken) {
-              logout();
-              return Promise.reject(error);
-            }
-
-            const token = await refreshToken(storedRefreshToken);
-            setAccessToken(token);
-
-            originalRequest.headers = originalRequest.headers || {};
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            originalRequest._retry = true;
-
-            return axiosInstance(originalRequest);
-          } catch (err) {
-            logout();
-            return Promise.reject(err);
-          }
-        }
-
-        return Promise.reject(error);
-      }
-    );
-
-    return () => {
-      axiosInstance.interceptors.response.eject(refreshInterceptor);
-    };
-  }, []);
 
   return (
     <AuthContext.Provider

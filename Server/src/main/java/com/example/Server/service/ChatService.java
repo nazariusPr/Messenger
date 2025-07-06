@@ -17,6 +17,4 @@ public interface ChatService {
   void delete(UUID id);
 
   Chat findById(UUID id);
-
-  boolean isUserParticipant(UUID chatId, String email);
 }

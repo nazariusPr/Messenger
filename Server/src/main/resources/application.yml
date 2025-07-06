@@ -1,5 +1,11 @@
 server:
   port: 9090
+  ssl:
+    key-store: classpath:${SSL_KEY_STORE:keystore.p12}
+    key-store-password: ${SSL_KEY_STORE_PASSWORD}
+    key-store-type: ${SSL_KEY_STORE_TYPE:PKCS12}
+    key-alias: ${SSL_KEY_ALIAS:messenger}
+
 
 spring:
   application:

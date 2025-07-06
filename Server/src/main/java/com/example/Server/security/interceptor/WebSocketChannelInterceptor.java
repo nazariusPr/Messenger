@@ -3,7 +3,7 @@ package com.example.Server.security.interceptor;
 import com.example.Server.enums.EToken;
 import com.example.Server.model.User;
 import com.example.Server.security.service.JwtService;
-import com.example.Server.service.ChatService;
+import com.example.Server.service.ParticipantService;
 import com.example.Server.service.UserService;
 import java.util.List;
 import java.util.UUID;
@@ -23,7 +23,7 @@ import org.springframework.stereotype.Component;
 @AllArgsConstructor
 public class WebSocketChannelInterceptor implements ChannelInterceptor {
   private final UserService userService;
-  private final ChatService chatService;
+  private final ParticipantService participantService;
   private final JwtService jwtService;
 
   @NonNull
@@ -44,15 +44,13 @@ public class WebSocketChannelInterceptor implements ChannelInterceptor {
         accessor.setUser(authentication);
       }
 
-    } else if (StompCommand.SUBSCRIBE == command) {
+    } else if (StompCommand.SUBSCRIBE == command || StompCommand.SEND == command) {
       UUID chatId = extractChatId(accessor.getDestination());
       String email = accessor.getUser().getName();
 
-      boolean isInChat = chatService.isUserParticipant(chatId, email);
-      System.out.println("Subscribing");
+      boolean isInChat = participantService.isUserParticipant(chatId, email);
       if (!isInChat) {
-        System.out.println("In error block");
-        throw new IllegalStateException("User not authorized to subscribe to this chat");
+        throw new IllegalStateException("Not a chat participant");
       }
     }
     return message;
@@ -70,7 +68,7 @@ public class WebSocketChannelInterceptor implements ChannelInterceptor {
   }
 
   private UUID extractChatId(String destination) {
-    // Assumes format: /topic/chat/{uuid}
+    // Assumes format: /topic/chat/{uuid} or "/chat/send/{uuid}"
     try {
       String[] parts = destination.split("/");
       return UUID.fromString(parts[parts.length - 1]);

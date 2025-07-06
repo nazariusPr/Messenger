@@ -2,7 +2,7 @@ package com.example.Server.dto.message;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -16,6 +16,6 @@ public class MessageResponseDto {
   private UUID id;
   private String email;
   private String content;
-  private LocalDateTime createdAt;
-  private LocalDateTime editedAt;
+  private OffsetDateTime createdAt;
+  private OffsetDateTime editedAt;
 }

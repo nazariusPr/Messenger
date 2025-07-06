@@ -1,14 +1,19 @@
 import { useState, useEffect, useRef } from "react";
-import type { MessageResponseDto as Message } from "../../types/api";
+import type {
+  MessageResponseDto as Message,
+  ChatResponseDto as Chat,
+} from "../../types/api";
 import MessageItem from "./MessageItem";
 import styled from "styled-components";
 
 interface MessagePanelProps {
+  chat: Chat;
   messages: Message[];
   onSendMessage: (text: string) => void;
 }
 
 const MessagePanel: React.FC<MessagePanelProps> = ({
+  chat,
   messages,
   onSendMessage,
 }) => {
@@ -38,6 +43,10 @@ const MessagePanel: React.FC<MessagePanelProps> = ({
 
   return (
     <Container>
+      <Header>
+        <ChatName>{chat.name}</ChatName>
+        <ChatDescription>{chat.description}</ChatDescription>
+      </Header>
       <MessagesContainer ref={messagesEndRef}>
         {[...messages].reverse().map((msg) => (
           <MessageItem message={msg} key={msg.id} />
@@ -60,9 +69,31 @@ const MessagePanel: React.FC<MessagePanelProps> = ({
 const Container = styled.div`
   display: flex;
   flex-direction: column;
+  border-left: 1px solid ${({ theme }) => theme.colors.border};
   height: 95vh;
   min-height: 0;
   background-color: ${({ theme }) => theme.colors.background};
+`;
+
+const Header = styled.div`
+  padding: 8px 16px;
+  background-color: #ffffff; /* White background */
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+`;
+
+const ChatName = styled.h2`
+  margin: 0;
+  font-size: 1rem; /* slightly smaller */
+  color: ${({ theme }) => theme.colors.text};
+`;
+
+const ChatDescription = styled.p`
+  margin: 0;
+  font-size: 0.75rem;
+  color: ${({ theme }) => theme.colors.muted};
 `;
 
 const MessagesContainer = styled.div`
@@ -75,7 +106,7 @@ const MessagesContainer = styled.div`
 const InputContainer = styled.div`
   display: flex;
   padding: ${({ theme }) => theme.spacing.sm};
-  border-top: 1px solid ${({ theme }) => theme.colors.secondary};
+  border-top: 1px solid ${({ theme }) => theme.colors.border};
   background-color: ${({ theme }) => theme.colors.background};
 `;
 

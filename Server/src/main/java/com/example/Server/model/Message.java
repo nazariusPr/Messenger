@@ -11,7 +11,8 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -33,11 +34,15 @@ public class Message {
   @Column(columnDefinition = "TEXT")
   private String content;
 
-  @Column(name = "created_at", nullable = false, updatable = false)
-  private LocalDateTime createdAt;
+  @Column(
+      name = "created_at",
+      nullable = false,
+      updatable = false,
+      columnDefinition = "TIMESTAMPTZ")
+  private OffsetDateTime createdAt;
 
-  @Column(name = "edited_at")
-  private LocalDateTime editedAt;
+  @Column(name = "edited_at", columnDefinition = "TIMESTAMPTZ")
+  private OffsetDateTime editedAt;
 
   @Column(name = "is_deleted", nullable = false)
   private boolean isDeleted = false;
@@ -52,11 +57,13 @@ public class Message {
 
   @PrePersist
   public void onCreate() {
-    createdAt = LocalDateTime.now();
+    createdAt = OffsetDateTime.now(ZoneOffset.UTC);
+    ;
   }
 
   @PreUpdate
   public void onUpdate() {
-    editedAt = LocalDateTime.now();
+    editedAt = OffsetDateTime.now(ZoneOffset.UTC);
+    ;
   }
 }

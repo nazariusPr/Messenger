@@ -2,8 +2,10 @@ import { Client, StompHeaders } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 
 const createStompClient = (accessToken: string | null): Client => {
-  const socket = new SockJS("http://localhost:9090/ws");
+  const baseURL = import.meta.env.VITE_BASE_URL;
+  const socket = new SockJS(baseURL + "/ws");
   const headers: StompHeaders = {};
+
   if (accessToken) {
     headers.Authorization = `Bearer ${accessToken}`;
   }

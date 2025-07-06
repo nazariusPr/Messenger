@@ -1,16 +1,14 @@
-import React from "react";
 import styled from "styled-components";
 import type { ChatResponseDto as Chat } from "../../types/api";
-
 interface ChatListProps {
   chats: Chat[];
-  selectedChatId: Chat | null;
+  selectedChat: Chat | null;
   onSelectChat: (id: Chat) => void;
 }
 
 const ChatList: React.FC<ChatListProps> = ({
   chats,
-  selectedChatId,
+  selectedChat,
   onSelectChat,
 }) => {
   return (
@@ -19,10 +17,18 @@ const ChatList: React.FC<ChatListProps> = ({
         {chats.map((chat) => (
           <ListItem
             key={chat.id}
-            selected={chat.id === selectedChatId?.id}
+            selected={chat.id === selectedChat?.id}
             onClick={() => onSelectChat(chat)}
           >
             <ChatName>{chat.name}</ChatName>
+            {chat.lastMessage && (
+              <LastMessage>
+                {chat.group && <Sender>{chat.lastMessage.email}:</Sender>}
+                {chat.lastMessage.content.length > 50
+                  ? chat.lastMessage.content.slice(0, 50) + "..."
+                  : chat.lastMessage.content}
+              </LastMessage>
+            )}
           </ListItem>
         ))}
       </List>
@@ -34,7 +40,6 @@ const Container = styled.div`
   width: 100%;
   max-width: 100%;
   height: 100%;
-  border-right: 1px solid ${({ theme }) => theme.colors.secondary};
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -77,7 +82,21 @@ const ListItem = styled.li<{ selected: boolean }>`
 
 const ChatName = styled.span`
   font-size: ${({ theme }) => theme.fontSizes.medium};
-  font-weight: 500;
+  font-weight: 700;
+`;
+
+const LastMessage = styled.span`
+  font-size: ${({ theme }) => theme.fontSizes.small};
+  margin-top: 4px;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
+const Sender = styled.span`
+  font-weight: 600;
+  margin-right: 6px;
 `;
 
 export default ChatList;

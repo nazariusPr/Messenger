@@ -15,7 +15,8 @@ const HomePage: React.FC = () => {
   const [chats, setChats] = useState<Chat[]>([]);
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
-  const subscriptionRef = useRef<any>(null);
+  const selectedChatRef = useRef<Chat | null>(null);
+  const subscriptionsRef = useRef<Record<string, any>>({});
   const { client } = useWS();
 
   useEffect(() => {
@@ -24,7 +25,10 @@ const HomePage: React.FC = () => {
         const data: PageDto<Chat> = await getChats(0, 100);
         setChats(data.elems);
         if (data.elems.length > 0 && !selectedChat) {
-          setSelectedChat(data.elems[0]);
+          const chat = data.elems[0];
+
+          setSelectedChat(chat);
+          selectedChatRef.current = chat;
         }
       } catch (error) {
         console.error("Failed to fetch chats", error);
@@ -37,56 +41,57 @@ const HomePage: React.FC = () => {
   useEffect(() => {
     const fetchMessages = async () => {
       if (!selectedChat) return;
+
       try {
         const data = await getMessages(selectedChat.id, 0, 100);
         setMessages(data.elems);
       } catch (error) {
         console.error("Failed to fetch messages", error);
       }
+
+      selectedChatRef.current = selectedChat;
     };
 
     fetchMessages();
   }, [selectedChat]);
 
   useEffect(() => {
-    if (subscriptionRef.current) {
-      subscriptionRef.current.unsubscribe();
-      subscriptionRef.current = null;
-    }
+    if (!client || !client.connected || chats.length === 0) return;
 
-    if (selectedChat && client && client.connected) {
-      if (selectedChat.group) {
-        subscriptionRef.current = client.subscribe(
-          `/topic/chat/${selectedChat.id}`,
-          (message) => {
-            const newMessage: Message = JSON.parse(message.body);
-            setMessages((prev) => [newMessage, ...prev]);
-          }
+    Object.values(subscriptionsRef.current).forEach((sub) => sub.unsubscribe());
+    subscriptionsRef.current = {};
+
+    chats.forEach((chat) => {
+      const sub = client.subscribe(`/topic/chat/${chat.id}`, (message) => {
+        const newMessage: Message = JSON.parse(message.body);
+
+        if (selectedChatRef.current?.id === chat.id) {
+          setMessages((prev) => [newMessage, ...prev]);
+        }
+
+        setChats((prev) =>
+          prev.map((ch) =>
+            ch.id === chat.id ? { ...ch, lastMessage: newMessage } : ch
+          )
         );
-      } else {
-        subscriptionRef.current = client.subscribe(
-          `/user/queue/messages`,
-          (message) => {
-            const newMessage: Message = JSON.parse(message.body);
-            setMessages((prev) => [newMessage, ...prev]);
-          }
-        );
-      }
-    }
+      });
+
+      subscriptionsRef.current[chat.id] = sub;
+    });
 
     return () => {
-      if (subscriptionRef.current) {
-        subscriptionRef.current.unsubscribe();
-        subscriptionRef.current = null;
-      }
+      Object.values(subscriptionsRef.current).forEach((sub) =>
+        sub.unsubscribe()
+      );
+      subscriptionsRef.current = {};
     };
-  }, [selectedChat, client, client?.connected]);
+  }, [client, client?.connected, chats]);
 
   const handleSendMessage = (content: string) => {
     if (!selectedChat || !client || !client.connected) return;
 
     client.publish({
-      destination: `/app/chat/sendMessage/${selectedChat.id}`,
+      destination: `/app/chat/send/${selectedChat.id}`,
       body: JSON.stringify({ content }),
     });
   };
@@ -100,7 +105,7 @@ const HomePage: React.FC = () => {
         <Sidebar>
           <ChatList
             chats={chats}
-            selectedChatId={selectedChat}
+            selectedChat={selectedChat}
             onSelectChat={setSelectedChat}
           />
         </Sidebar>
@@ -108,6 +113,7 @@ const HomePage: React.FC = () => {
         <Content>
           {selectedChat && (
             <MessagePanel
+              chat={selectedChat}
               messages={messages}
               onSendMessage={handleSendMessage}
             />
@@ -127,7 +133,7 @@ const Container = styled.div`
 
 const SearchBarWrapper = styled.div`
   padding: ${({ theme }) => theme.spacing.xs};
-  background-color: ${({ theme }) => theme.colors.background}; /
+  background-color: ${({ theme }) => theme.colors.background};
 `;
 
 const MainContent = styled.div`
@@ -137,7 +143,7 @@ const MainContent = styled.div`
 
 const Sidebar = styled.div`
   flex: 1;
-  max-width: 25%;
+  max-width: 30%;
 `;
 
 const Content = styled.div`

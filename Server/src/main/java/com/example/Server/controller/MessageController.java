@@ -35,7 +35,7 @@ public class MessageController {
     return messageService.read(chatId, pageable);
   }
 
-  @MessageMapping("/chat/sendMessage/{convId}")
+  @MessageMapping("/chat/send/{convId}")
   public void sendMessageToConvId(
       @DestinationVariable UUID convId,
       @Valid @Payload MessageRequestDto message,

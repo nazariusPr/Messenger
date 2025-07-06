@@ -2,7 +2,6 @@ import axiosInstance from "./axiosInstance";
 import type {
   TokenDto,
   AccessTokenDto,
-  AccessRefreshTokenDto,
   PageDto,
   UserDto,
   ChatResponseDto as Chat,
@@ -10,26 +9,30 @@ import type {
 } from "../types/api";
 
 // Auth
-export const refreshToken = async (token: string): Promise<string> => {
-  const payload: TokenDto = { token };
-
+export const refreshToken = async (): Promise<string> => {
   const response = await axiosInstance.post<AccessTokenDto>(
     "/auth/refresh-token",
-    payload
+    {},
+    { withCredentials: true }
   );
   return response.data.accessToken;
 };
 
-export const googleOAuth2 = async (
-  token: string
-): Promise<AccessRefreshTokenDto> => {
+export const googleOAuth2 = async (token: string): Promise<AccessTokenDto> => {
   const payload: TokenDto = { token };
 
-  const response = await axiosInstance.post<AccessRefreshTokenDto>(
+  const response = await axiosInstance.post<AccessTokenDto>(
     "/auth/google",
-    payload
+    payload,
+    { withCredentials: true }
   );
   return response.data;
+};
+
+export const logout = async (): Promise<void> => {
+  await axiosInstance.post("/auth/logout", null, {
+    withCredentials: true,
+  });
 };
 
 // User

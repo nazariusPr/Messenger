@@ -48,20 +48,23 @@ const PageWrapper = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 100dvw;
+  max-width: 100%;
+  height: 100dvh;
   padding: 2rem;
-  min-height: 100vh;
-  width: 100vw;
+  overflow: hidden;
   background: linear-gradient(135deg, #ece9e6, #ffffff);
+  box-sizing: border-box;
 `;
 
 const Card = styled.div`
-  width: 100%;
-  max-width: 440px;
+  width: 65%;
   padding: 3rem 2.5rem;
   background-color: ${({ theme }) => theme.colors.background || "#fff"};
-  border-radius: ${({ theme }) => theme.borderRadius?.lg || "16px"};
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+  border-radius: ${({ theme }) => theme.borderRadius?.lg || "1rem"};
+  box-shadow: 0 0.625rem 2.5rem rgba(0, 0, 0, 0.08); /* ≈ 10px 40px */
   text-align: center;
+  overflow: hidden; /* disables internal scrollbars */
 `;
 
 const Title = styled.h1`

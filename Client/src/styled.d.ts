@@ -6,7 +6,14 @@ declare module "styled-components" {
       primary: string;
       secondary: string;
       background: string;
+      surface: string;
       text: string;
+      muted: string;
+      border: string;
+      error: string;
+      success: string;
+      warning: string;
+      info: string;
     };
     fontSizes: {
       small: string;

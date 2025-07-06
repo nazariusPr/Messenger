@@ -1,6 +1,6 @@
 package com.example.Server.service.impl;
 
-import static com.example.Server.util.GeneralUtil.buildPageDto;
+import static com.example.Server.utils.GeneralUtils.buildPageDto;
 
 import com.example.Server.dto.chat.ChatRequestDto;
 import com.example.Server.dto.chat.ChatResponseDto;
@@ -87,12 +87,5 @@ public class ChatServiceImpl implements ChatService {
   @Override
   public Chat findById(UUID id) {
     return repository.findById(id).orElseThrow(EntityNotFoundException::new);
-  }
-
-  @Override
-  public boolean isUserParticipant(UUID chatId, String email) {
-    Chat chat = findById(chatId);
-    return chat.getParticipants().stream()
-        .anyMatch(participant -> participant.getUser().getEmail().equalsIgnoreCase(email));
   }
 }

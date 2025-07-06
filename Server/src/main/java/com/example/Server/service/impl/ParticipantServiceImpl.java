@@ -11,6 +11,7 @@ import com.example.Server.service.ParticipantService;
 import com.example.Server.service.UserService;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -36,5 +37,10 @@ public class ParticipantServiceImpl implements ParticipantService {
     }
 
     return repository.saveAll(participants);
+  }
+
+  @Override
+  public boolean isUserParticipant(UUID chatId, String email) {
+    return repository.existsByChatIdAndUserEmail(chatId, email);
   }
 }

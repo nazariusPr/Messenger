@@ -16,5 +16,9 @@ jwt:
     access-token: ${ACCESS_TOKEN_SECRET}
     refresh-token: ${REFRESH_TOKEN_SECRET}
 
+encryption:
+  key: ${ENCRYPTION_KEY}
+  algo: ${ENCRYPTION_ALGO}
+
 client:
   url: ${CLIENT_URL}

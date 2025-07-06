@@ -10,9 +10,12 @@ const MessageItem: React.FC<MessageItemProps> = ({ message }) => {
   const { email } = useAuth();
   const isOwn = message.email === email;
 
+  const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const formattedTime = new Date(message.createdAt).toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
+    hour12: false,
+    timeZone: userTimeZone,
   });
 
   return (

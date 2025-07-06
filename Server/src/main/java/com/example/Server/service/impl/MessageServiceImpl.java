@@ -1,7 +1,6 @@
 package com.example.Server.service.impl;
 
-import static com.example.Server.util.GeneralUtil.buildPageDto;
-import static com.example.Server.util.GeneralUtil.resolvePrivateChatField;
+import static com.example.Server.utils.GeneralUtils.buildPageDto;
 
 import com.example.Server.dto.general.PageDto;
 import com.example.Server.dto.message.MessageRequestDto;
@@ -36,20 +35,12 @@ public class MessageServiceImpl implements MessageService {
     User sender = userService.findByEmail(senderEmail);
     Chat chat = chatService.findById(chatId);
 
-    Message message = new Message();
-    message.setContent(messageRequestDto.getContent());
-    message.setSender(sender);
-    message.setChat(chat);
-
+    Message message = mapper.dtoToEntity(messageRequestDto, sender, chat);
     message = repository.save(message);
+
     MessageResponseDto messageResponseDto = mapper.entityToDto(message);
 
-    if (chat.isGroup()) {
-      template.convertAndSend("/topic/chat/" + chatId, messageResponseDto);
-    } else {
-      String receiverEmail = resolvePrivateChatField(chat, senderEmail, User::getEmail);
-      template.convertAndSendToUser(receiverEmail, "/queue/messages", messageResponseDto);
-    }
+    template.convertAndSend("/topic/chat/" + chatId, messageResponseDto);
 
     return messageResponseDto;
   }

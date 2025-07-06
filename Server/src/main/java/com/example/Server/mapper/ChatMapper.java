@@ -1,6 +1,6 @@
 package com.example.Server.mapper;
 
-import static com.example.Server.util.GeneralUtil.resolvePrivateChatField;
+import static com.example.Server.utils.GeneralUtils.resolvePrivateChatField;
 
 import com.example.Server.dto.chat.ChatResponseDto;
 import com.example.Server.dto.message.MessageResponseDto;

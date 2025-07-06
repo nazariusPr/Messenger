@@ -31,5 +31,9 @@ jwt:
     access-token: dummy-access-token-secret
     refresh-token: dummy-refresh-token-secret
 
+encryption:
+  key: 1234567890123456
+  algo: AES
+
 client:
   url: http://localhost:3000

@@ -9,7 +9,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -36,8 +37,12 @@ public class Chat {
   @Column(name = "is_group", nullable = false)
   private boolean isGroup;
 
-  @Column(name = "created_at", nullable = false, updatable = false)
-  private LocalDateTime createdAt;
+  @Column(
+      name = "created_at",
+      nullable = false,
+      updatable = false,
+      columnDefinition = "TIMESTAMPTZ")
+  private OffsetDateTime createdAt;
 
   @OneToMany(mappedBy = "chat", cascade = CascadeType.REMOVE)
   private Set<Message> messages = new HashSet<>();
@@ -47,6 +52,6 @@ public class Chat {
 
   @PrePersist
   public void prePersist() {
-    createdAt = LocalDateTime.now();
+    createdAt = OffsetDateTime.now(ZoneOffset.UTC);
   }
 }

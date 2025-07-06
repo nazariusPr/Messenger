@@ -1,6 +1,6 @@
 package com.example.Server.service.impl;
 
-import static com.example.Server.util.GeneralUtil.buildPageDto;
+import static com.example.Server.utils.GeneralUtils.buildPageDto;
 
 import com.example.Server.dto.general.PageDto;
 import com.example.Server.dto.user.UserDto;
