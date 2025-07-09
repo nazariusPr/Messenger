@@ -4,7 +4,7 @@ A lightweight web-based messenger app built with modern technologies, enabling r
 
 ## 🚀 Features
 
-- ✅ User authentication & registration
+- ✅ User authentication & registration via Google OAuth2
 - 💬 Real-time messaging via WebSockets (STOMP over SockJS)
 - 🟢 Online/offline user status updates
 - 🔔 Notifications for new messages
@@ -19,6 +19,7 @@ A lightweight web-based messenger app built with modern technologies, enabling r
 - Spring Security + JWT
 - WebSocket (STOMP, SockJS)
 - PostgreSQL
+- Redis
 - JPA / Hibernate
 - Lombok
 - MapStruct
