@@ -19,7 +19,6 @@ A lightweight web-based messenger app built with modern technologies, enabling r
 - Spring Security + JWT
 - WebSocket (STOMP, SockJS)
 - PostgreSQL
-- Redis
 - JPA / Hibernate
 - Lombok
 - MapStruct
@@ -29,4 +28,4 @@ A lightweight web-based messenger app built with modern technologies, enabling r
 - React
 - Axios
 - STOMP over SockJS
-- *(Not Dockerized yet)*
+- Docker
