@@ -6,6 +6,7 @@ import com.example.Server.security.service.JwtService;
 import com.example.Server.service.ParticipantService;
 import com.example.Server.service.UserService;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
@@ -26,34 +27,74 @@ public class WebSocketChannelInterceptor implements ChannelInterceptor {
   private final ParticipantService participantService;
   private final JwtService jwtService;
 
+  private static final Set<String> SKIPPED_DESTINATION_PREFIXES = Set.of("/topic/user-status/");
+
   @NonNull
   @Override
   public Message<?> preSend(@NonNull Message<?> message, @NonNull MessageChannel channel) {
     StompHeaderAccessor accessor =
         MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
-    String accessToken = resolveJwtFromAccessor(accessor);
+    if (accessor == null) return message;
 
     StompCommand command = accessor.getCommand();
+    String destination = accessor.getDestination();
+    String accessToken = resolveJwtFromAccessor(accessor);
 
-    if (StompCommand.CONNECT == command && accessToken != null) {
-      String email = jwtService.extractUsername(accessToken, EToken.ACCESS);
-      User user = userService.findByEmail(email);
-
-      if (jwtService.isTokenValid(accessToken, user, EToken.ACCESS)) {
-        Authentication authentication = new UsernamePasswordAuthenticationToken(email, null, null);
-        accessor.setUser(authentication);
+    switch (command) {
+      case CONNECT -> {
+        authenticateUser(accessor, accessToken);
       }
-
-    } else if (StompCommand.SUBSCRIBE == command || StompCommand.SEND == command) {
-      UUID chatId = extractChatId(accessor.getDestination());
-      String email = accessor.getUser().getName();
-
-      boolean isInChat = participantService.isUserParticipant(chatId, email);
-      if (!isInChat) {
-        throw new IllegalStateException("Not a chat participant");
+      case SUBSCRIBE -> {
+        if (!shouldSkipAuthorization(destination)) {
+          authorizeUserForChat(accessor, destination);
+        }
+      }
+      case SEND -> {
+        authorizeUserForChat(accessor, destination);
+      }
+      default -> {
+        // No action needed for other commands (e.g., DISCONNECT)
       }
     }
+
     return message;
+  }
+
+  private void authenticateUser(StompHeaderAccessor accessor, String accessToken) {
+    if (accessToken == null) {
+      return;
+    }
+
+    String email = jwtService.extractUsername(accessToken, EToken.ACCESS);
+    User user = userService.findByEmail(email);
+
+    if (jwtService.isTokenValid(accessToken, user, EToken.ACCESS)) {
+      Authentication authentication = new UsernamePasswordAuthenticationToken(email, null, null);
+      accessor.setUser(authentication);
+    }
+  }
+
+  private void authorizeUserForChat(StompHeaderAccessor accessor, String destination) {
+    if (accessor.getUser() == null) {
+      throw new IllegalStateException("User is not authenticated");
+    }
+
+    if (destination == null) {
+      throw new IllegalArgumentException("Destination is required for authorization");
+    }
+
+    UUID chatId = extractChatId(destination);
+    String email = accessor.getUser().getName();
+
+    boolean isInChat = participantService.isUserParticipant(chatId, email);
+    if (!isInChat) {
+      throw new IllegalStateException("User " + email + " is not a participant in chat " + chatId);
+    }
+  }
+
+  private boolean shouldSkipAuthorization(String destination) {
+    if (destination == null) return false;
+    return SKIPPED_DESTINATION_PREFIXES.stream().anyMatch(destination::startsWith);
   }
 
   private String resolveJwtFromAccessor(StompHeaderAccessor accessor) {

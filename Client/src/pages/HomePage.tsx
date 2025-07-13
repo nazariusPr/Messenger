@@ -6,6 +6,8 @@ import type {
   MessageResponseDto as Message,
   PageDto,
 } from "../types/api";
+import type { StompSubscription, IMessage } from "@stomp/stompjs";
+
 import styled from "styled-components";
 import UserSearch from "../components/user/UserSearch";
 import ChatList from "../components/chat/ChatList";
@@ -16,7 +18,7 @@ const HomePage: React.FC = () => {
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const selectedChatRef = useRef<Chat | null>(null);
-  const subscriptionsRef = useRef<Record<string, any>>({});
+  const subscriptionsRef = useRef<Record<string, StompSubscription>>({});
   const { client } = useWS();
 
   useEffect(() => {
@@ -62,19 +64,22 @@ const HomePage: React.FC = () => {
     subscriptionsRef.current = {};
 
     chats.forEach((chat) => {
-      const sub = client.subscribe(`/topic/chat/${chat.id}`, (message) => {
-        const newMessage: Message = JSON.parse(message.body);
+      const sub = client.subscribe(
+        `/topic/chat/${chat.id}`,
+        (message: IMessage) => {
+          const newMessage: Message = JSON.parse(message.body);
 
-        if (selectedChatRef.current?.id === chat.id) {
-          setMessages((prev) => [newMessage, ...prev]);
+          if (selectedChatRef.current?.id === chat.id) {
+            setMessages((prev) => [newMessage, ...prev]);
+          }
+
+          setChats((prev) =>
+            prev.map((ch) =>
+              ch.id === chat.id ? { ...ch, lastMessage: newMessage } : ch
+            )
+          );
         }
-
-        setChats((prev) =>
-          prev.map((ch) =>
-            ch.id === chat.id ? { ...ch, lastMessage: newMessage } : ch
-          )
-        );
-      });
+      );
 
       subscriptionsRef.current[chat.id] = sub;
     });

@@ -17,6 +17,11 @@ export interface UserDto {
   description: string;
 }
 
+export interface UserStatusDto {
+  email: string;
+  online: boolean;
+}
+
 export interface EmailDto {
   email: string;
 }

@@ -1,0 +1,15 @@
+services:
+  client:
+    build: .
+    image: client:latest
+    container_name: client
+    stdin_open: true
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./:/app:delegated
+      - /app/node_modules/
+    env_file:
+      - .env
+    environment:
+      - CHOKIDAR_USEPOLLING=true

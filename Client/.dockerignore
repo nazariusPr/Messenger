@@ -1,0 +1,32 @@
+# Dependency directories
+node_modules
+dist
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build output
+.vite
+.next
+out
+
+# Local env files
+.env
+.env.local
+.env.*.local
+
+# OS / editor files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Git files
+.git
+.gitignore
+
+# Docker ignore itself
+.dockerignore

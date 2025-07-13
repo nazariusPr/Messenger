@@ -1,7 +1,11 @@
 import { useState, useEffect, useRef } from "react";
+import { isUserOnline } from "../../api/api";
+import { useWS } from "../../contexts/WebSocketContext";
+import type { StompSubscription, IMessage } from "@stomp/stompjs";
 import type {
   MessageResponseDto as Message,
   ChatResponseDto as Chat,
+  UserStatusDto as UserStatus,
 } from "../../types/api";
 import MessageItem from "./MessageItem";
 import styled from "styled-components";
@@ -18,14 +22,51 @@ const MessagePanel: React.FC<MessagePanelProps> = ({
   onSendMessage,
 }) => {
   const [messageText, setMessageText] = useState("");
-
+  const [userStatus, setUserStatus] = useState<boolean | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { client } = useWS();
+  const subscriptionRef = useRef<StompSubscription | null>(null);
 
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollTop = messagesEndRef.current.scrollHeight;
     }
   }, [messages]);
+
+  useEffect(() => {
+    const fetchUserStatus = async () => {
+      try {
+        const status = await isUserOnline(chat.name);
+        setUserStatus(status.online);
+
+        if (!client || !client.connected) return;
+        subscriptionRef.current = null;
+
+        const subscription = client.subscribe(
+          `/topic/user-status/${chat.name}`,
+          (message: IMessage) => {
+            const parsed: UserStatus = JSON.parse(message.body);
+            setUserStatus(parsed.online);
+          }
+        );
+
+        subscriptionRef.current = subscription;
+      } catch {
+        console.error("Error with user ststus occurs");
+      }
+    };
+
+    if (!chat.group) {
+      fetchUserStatus();
+    } else {
+      setUserStatus(null);
+    }
+
+    return () => {
+      subscriptionRef.current?.unsubscribe();
+      subscriptionRef.current = null;
+    };
+  }, [chat]);
 
   const handleSend = () => {
     const trimmed = messageText.trim();
@@ -44,7 +85,15 @@ const MessagePanel: React.FC<MessagePanelProps> = ({
   return (
     <Container>
       <Header>
-        <ChatName>{chat.name}</ChatName>
+        <ChatNameRow>
+          <ChatName>{chat.name}</ChatName>
+          {!chat.group && userStatus !== null && (
+            <>
+              <StatusDot online={userStatus} />
+              <StatusText>{userStatus ? "Online" : "Offline"}</StatusText>
+            </>
+          )}
+        </ChatNameRow>
         <ChatDescription>{chat.description}</ChatDescription>
       </Header>
       <MessagesContainer ref={messagesEndRef}>
@@ -77,17 +126,37 @@ const Container = styled.div`
 
 const Header = styled.div`
   padding: 8px 16px;
-  background-color: #ffffff; /* White background */
+  background-color: #ffffff;
   border-bottom: 1px solid ${({ theme }) => theme.colors.border};
   display: flex;
   flex-direction: column;
   gap: 2px;
 `;
 
+const ChatNameRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
 const ChatName = styled.h2`
   margin: 0;
   font-size: 1rem; /* slightly smaller */
   color: ${({ theme }) => theme.colors.text};
+`;
+
+const StatusDot = styled.span<{ online: boolean }>`
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: ${({ online, theme }) =>
+    online ? theme.colors.success : theme.colors.muted};
+`;
+
+const StatusText = styled.span`
+  font-size: 0.75rem;
+  color: ${({ theme }) => theme.colors.muted};
 `;
 
 const ChatDescription = styled.p`

@@ -6,6 +6,7 @@ import type {
   UserDto,
   ChatResponseDto as Chat,
   MessageResponseDto as Message,
+  UserStatusDto,
 } from "../types/api";
 
 // Auth
@@ -39,6 +40,13 @@ export const search = async (
 ): Promise<PageDto<UserDto>> => {
   const response = await apiClient.get<PageDto<UserDto>>("/users/search", {
     params: { email, page, size },
+  });
+  return response.data;
+};
+
+export const isUserOnline = async (email: string): Promise<UserStatusDto> => {
+  const response = await apiClient.get<UserStatusDto>("/user-status", {
+    params: { email },
   });
   return response.data;
 };
